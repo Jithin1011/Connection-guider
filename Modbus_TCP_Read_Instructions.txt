@@ -1,0 +1,66 @@
+Modbus TCP Read Instructions (Saved Note)
+
+Purpose
+- How to read Engine Data Converter values over RJ45 (Modbus TCP) using ModScan or Python.
+
+ModScan configuration
+- Interface: TCP/IP
+- IP Address: 192.168.1.10
+- Port: 502
+- Unit ID / Slave ID: 2
+- Protocol: Modbus TCP
+- Function: Read Holding Registers
+- Start address: 0 (or 40000 depending on client convention)
+- Quantity: 13 (or more as needed)
+- Data type: 16-bit registers (default)
+
+Register mapping (holdingRegs[])
+- holdingRegs[0] -> Run Minutes (Modbus offset 0 / address 40000)
+- holdingRegs[1] -> Run Hours
+- holdingRegs[2] -> Lamps State 1
+- holdingRegs[3] -> Lamps State 2
+- holdingRegs[4] -> Relay State 1
+- holdingRegs[5] -> Relay State 2
+- holdingRegs[6] -> Engine Speed (RPM)
+- holdingRegs[7] -> Battery Voltage (scaled)
+- holdingRegs[8] -> Oil Pressure
+- holdingRegs[9] -> Oil Temperature
+- holdingRegs[10] -> Coolant Temperature
+- holdingRegs[11] -> Alarm State 1 (bitflags)
+- holdingRegs[12] -> Alarm State 2 (bitflags)
+
+Notes about addressing
+- Some Modbus clients use 0-based addressing (start=0 is register 40000);
+  others use 1-based (start=40001). If values look shifted by one, adjust start index.
+
+Python quick test (pymodbus)
+- Install: pip install pymodbus
+- Example script:
+  from pymodbus.client.sync import ModbusTcpClient
+  client = ModbusTcpClient('192.168.1.10', port=502)
+  client.connect()
+  rr = client.read_holding_registers(0, 13, unit=2)
+  print(rr.registers)
+  client.close()
+
+Troubleshooting
+1. Network/subnet
+   - PC must be on the same subnet (e.g., 192.168.1.x with mask 255.255.255.0)
+   - If direct-cabled, set a static IP on PC, e.g., 192.168.1.100
+2. Ping the device
+   - ping 192.168.1.10  -> should reply if network OK
+3. Check ARP
+   - arp -a  -> look for MAC A5-A6-DE-0B-A8-C2 mapped to 192.168.1.10
+4. Serial debug
+   - Use USB-TTL on PB10/PB11 at 115200 to see boot and parsed frame logs
+5. If Modbus reads zeros
+   - Ensure the telemetry frames are being received and parsed (look for [PARSED] logs)
+   - Verify RS485 wiring and DE/RE pin (PA11) state
+6. Firewall
+   - Ensure local firewall not blocking port 502 (rare for local direct connections)
+
+Reference: Project paths
+- Firmware project: D:\For my refferance\code\try1 engine data cv\Engine_Protocol
+- Test scripts: send_frame.py, read_modbus.py
+
+Saved on: D:\For my refferance\code\try1 engine data cv\Modbus_TCP_Read_Instructions.txt
